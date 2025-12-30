@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merkle Tree - Bài Tập Lớn Blockchain</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌲 Merkle Tree - Kiểm Tra Tính Toàn Vẹn Dữ Liệu</h1>
+            <p class="subtitle">Bài Tập Lớn Blockchain - Công Cụ Demo & Kiểm Tra</p>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>1️⃣ Xây Dựng Merkle Tree</h2>
+                
+                <div class="form-group">
+                    <label>Nhập dữ liệu (mỗi dòng 1 phần tử):</label>
+                    <textarea id="dataInput" rows="6" placeholder="Block 1&#10;Block 2&#10;Block 3&#10;Block 4"></textarea>
+                </div>
+
+                <div class="example-data">
+                    <button class="example-btn" onclick="loadExample(1)">📝 Ví dụ 1: 4 Blocks</button>
+                    <button class="example-btn" onclick="loadExample(2)">📝 Ví dụ 2: 5 Blocks</button>
+                    <button class="example-btn" onclick="loadExample(3)">📝 Ví dụ 3: Transactions</button>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="buildTree()">🔨 Xây Dựng Tree</button>
+                    <button class="btn-secondary" onclick="clearAll()">🗑️ Xóa</button>
+                </div>
+
+                <div id="buildStatus"></div>
+            </div>
+
+            <div class="card">
+                <h2>✅ Root Hash (Tóm Tắt Dữ Liệu)</h2>
+                
+                <p style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: 10px;">
+                    Root hash là đại diện duy nhất cho toàn bộ dữ liệu. Nếu 1 phần tử thay đổi → root hash sẽ khác.
+                </p>
+
+                <div class="hash-display" id="rootHashDisplay">
+                    Chưa xây dựng tree
+                </div>
+
+                <button class="btn-primary" onclick="copyToClipboard('rootHashDisplay')" style="width: 100%; margin-top: 10px;">
+                    📋 Copy Root Hash
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🌳 Cấu Trúc Merkle Tree</h2>
+            
+            <p style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: 10px;">
+                Cây được xây dựng từ dưới lên (leaf → root). Mỗi node là SHA-256 hash của 2 node con.
+            </p>
+
+            <div class="tree-structure" id="treeStructure">
+                Chưa xây dựng tree
+            </div>
+
+            <button class="btn-secondary" onclick="downloadTreeStructure()" style="width: 100%; margin-top: 10px;">
+                📥 Download Cấu Trúc
+            </button>
+        </div>
+
+        <div class="card">
+            <h2>🔐 Merkle Proof - Chứng Minh Dữ Liệu Hợp Lệ</h2>
+
+            <p style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: 10px;">
+                Merkle Proof cho phép bạn chứng minh 1 phần tử nằm trong tree mà không cần toàn bộ dữ liệu.
+            </p>
+
+            <div class="form-group">
+                <label>Chỉ số phần tử cần chứng minh (0 đến n-1):</label>
+                <input type="number" id="proofIndex" min="0" placeholder="0">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="generateProof()">🔑 Sinh Proof</button>
+                <button class="btn-secondary" onclick="clearProof()">🗑️ Xóa Proof</button>
+            </div>
+
+            <div id="proofStatus"></div>
+
+            <div id="proofOutput" style="display: none;">
+                <div style="margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
+                    <h3 style="font-size: 14px; margin-bottom: 10px;">📜 Merkle Proof Path:</h3>
+                    <div id="proofPath"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>✔️ Kiểm Tra Merkle Proof</h2>
+
+            <p style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: 10px;">
+                Kiểm tra xem proof có hợp lệ không bằng cách tính lại root hash từ leaf + proof.
+            </p>
+
+            <div class="form-group">
+                <label>Phần tử cần kiểm tra:</label>
+                <input type="text" id="verifyData" placeholder="Block 1">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-success" onclick="verifyProof()">✅ Kiểm Tra Proof</button>
+                <button class="btn-danger" onclick="demoDetectModification()">❌ Thay Đổi & Kiểm Tra (Demo)</button>
+            </div>
+
+            <div id="verifyStatus"></div>
+
+            <div id="verifyResult" style="display: none; margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
+                <h3 style="font-size: 14px; margin-bottom: 10px;">🔍 Kết Quả Kiểm Tra:</h3>
+                <div id="verifyComparison"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
