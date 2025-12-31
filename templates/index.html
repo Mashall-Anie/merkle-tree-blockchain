@@ -17,7 +17,7 @@
 
         <div class="grid">
             <div class="card">
-                <h2>1️⃣ Xây Dựng Merkle Tree</h2>
+                <h2>Xây Dựng Merkle Tree</h2>
 
                 <div class="form-group">
                     <label>Nhập dữ liệu (mỗi dòng 1 phần tử):</label>
@@ -111,6 +111,20 @@
 
             <div id="proofOutput" style="display: none;">
                 <div style="margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
+                    <p style="color: var(--color-text-secondary); font-size: 12px; margin-bottom: 10px;">
+                        <span class="legend-item"><span class="legend-color legend-target"></span> Phần tử được
+                            chọn</span>
+                        <span class="legend-item"><span class="legend-color legend-proof"></span> Nodes trong proof
+                            path</span>
+                        <span class="legend-item"><span class="legend-color legend-computed"></span> Nodes được tính
+                            toán</span>
+                    </p>
+                    <div class="tree-visual-container" id="proofTreeContainer" style="max-height: 350px;">
+                        <div class="tree-visual" id="proofTreeVisual"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
                     <h3 style="font-size: 14px; margin-bottom: 10px;">📜 Merkle Proof Path:</h3>
                     <div id="proofPath"></div>
                 </div>
@@ -125,10 +139,21 @@
             </p>
 
             <div class="form-group">
-                <label>Chọn phần tử cần kiểm tra:</label>
-                <select id="verifySelect" class="data-select">
-                    <option value="" disabled selected>-- Vui lòng sinh proof trước --</option>
-                </select>
+                <label>Chọn hoặc nhập dữ liệu cần kiểm tra:</label>
+                <div class="verify-input-group">
+                    <select id="verifySelect" class="data-select verify-select" onchange="onVerifySelectChange()">
+                        <option value="" disabled selected>-- Chọn từ danh sách --</option>
+                    </select>
+                    <span class="verify-or">hoặc</span>
+                    <div class="verify-search-wrapper">
+                        <input type="text" id="verifyInput" class="verify-input"
+                            placeholder="Nhập bất kỳ dữ liệu nào..." oninput="onVerifyInputChange()">
+                        <div class="verify-search-results" id="verifySearchResults" style="display: none;"></div>
+                    </div>
+                </div>
+                <p style="color: var(--color-text-secondary); font-size: 11px; margin-top: 6px;">
+                    💡 Bạn có thể chọn từ danh sách hoặc nhập bất kỳ dữ liệu nào để kiểm tra (kể cả dữ liệu giả)
+                </p>
             </div>
 
             <div class="button-group">
