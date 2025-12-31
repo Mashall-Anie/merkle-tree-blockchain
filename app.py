@@ -33,16 +33,27 @@ def build_tree():
                 'error': 'Dữ liệu sau lọc không được rỗng!'
             }), 400
         
+        if len(data) > 200:
+            return jsonify({
+                'success': False,
+                'error': f'Vượt quá giới hạn! Tối đa 200 dòng dữ liệu (hiện tại: {len(data)} dòng)'
+            }), 400
+        
         current_tree = MerkleTree(data)
+        
+        # Create indexed data list for dropdowns
+        data_list = [{'index': i, 'data': item} for i, item in enumerate(data)]
         
         return jsonify({
             'success': True,
             'root_hash': current_tree.get_root_hash(),
             'stats': current_tree.get_statistics(),
             'tree_structure': current_tree.print_tree(verbose=False),
+            'tree_levels': current_tree.get_tree_levels_data(),
             'leaf_count': current_tree.get_leaf_count(),
             'depth': current_tree.get_tree_depth(),
-            'height': current_tree.get_tree_height()
+            'height': current_tree.get_tree_height(),
+            'data_list': data_list
         }), 200
     
     except Exception as e:

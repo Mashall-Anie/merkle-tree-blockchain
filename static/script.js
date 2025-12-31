@@ -1,6 +1,32 @@
 let currentTree = null;
 let currentProof = null;
 let currentProofIndex = null;
+let currentDataList = [];
+
+const MAX_LINES = 200;
+
+function updateLineCounter() {
+    const input = document.getElementById('dataInput').value;
+    const lines = input.split('\n').filter(line => line.trim()).length;
+    const lineCountEl = document.getElementById('lineCount');
+    const counterEl = document.getElementById('lineCounter');
+    const buildBtn = document.getElementById('buildBtn');
+
+    lineCountEl.textContent = lines;
+    counterEl.classList.remove('warning', 'error');
+
+    if (lines > MAX_LINES) {
+        counterEl.classList.add('error');
+        buildBtn.disabled = true;
+    }
+    else if (lines > MAX_LINES * 0.9) {
+        counterEl.classList.add('warning');
+        buildBtn.disabled = false;
+    }
+    else {
+        buildBtn.disabled = false;
+    }
+}
 
 async function buildTree() {
     const input = document.getElementById('dataInput').value.trim();
@@ -15,9 +41,13 @@ async function buildTree() {
         return;
     }
 
+    if (data.length > MAX_LINES) {
+        showStatus('buildStatus', `Vượt quá giới hạn! Tối đa ${MAX_LINES} dòng (hiện tại: ${data.length})`, 'error');
+        return;
+    }
+
     try {
         showStatus('buildStatus', '⏳ Đang xây dựng tree...', 'info');
-
         const response = await fetch('/api/build-tree', {
             method: 'POST',
             headers: {
@@ -27,20 +57,112 @@ async function buildTree() {
         });
 
         const result = await response.json();
-
         if (!result.success) {
             showStatus('buildStatus', `❌ Lỗi: ${result.error}`, 'error');
             return;
         }
 
         currentTree = result;
+        currentDataList = result.data_list || [];
+
         document.getElementById('rootHashDisplay').textContent = result.root_hash;
         document.getElementById('treeStructure').textContent = result.tree_structure;
 
+        renderVisualTree(result.tree_levels);
+        populateDataSelects();
         showStatus('buildStatus', `✅ Xây dựng thành công! ${result.leaf_count} phần tử, ${result.depth} levels`, 'success');
-    } catch (error) {
+    }
+    catch (error) {
         showStatus('buildStatus', `❌ Lỗi: ${error.message}`, 'error');
     }
+}
+
+function renderVisualTree(treeLevels) {
+    const container = document.getElementById('treeVisual');
+    if (!treeLevels || treeLevels.length === 0) {
+        container.innerHTML = '<div class="tree-placeholder">Chưa xây dựng tree</div>';
+        return;
+    }
+
+    let html = '';
+    treeLevels.forEach((level, levelIndex) => {
+        html += `<div class="tree-level">`;
+        html += `<span class="tree-level-label">${level.level_name}</span>`;
+        html += `<div class="tree-nodes">`;
+
+        level.nodes.forEach((node, nodeIndex) => {
+            let nodeClass = 'node-internal';
+            if (node.is_root) nodeClass = 'node-root';
+            else if (node.is_leaf) nodeClass = 'node-leaf';
+
+            const label = node.label ? node.label : '';
+            const indexLabel = node.is_leaf ? `[${node.index}]` : '';
+
+            html += `
+                <div class="tree-node">
+                    <div class="tree-node-box ${nodeClass}" title="${node.hash}">
+                        ${node.hash_short}
+                    </div>
+                    ${label ? `<div class="tree-node-label" title="${label}">${label}</div>` : ''}
+                    ${indexLabel ? `<div class="tree-node-index">${indexLabel}</div>` : ''}
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        html += `</div>`;
+
+        if (levelIndex < treeLevels.length - 1) {
+            html += `<div class="tree-connectors">`;
+            for (let i = 0; i < level.nodes.length; i++) {
+                html += `<div class="tree-connector-line" style="margin: 0 ${50 + (levelIndex * 20)}px;"></div>`;
+            }
+            html += `</div>`;
+        }
+    });
+
+    container.innerHTML = html;
+}
+
+function populateDataSelects() {
+    const proofSelect = document.getElementById('proofSelect');
+    const verifySelect = document.getElementById('verifySelect');
+
+    // Clear existing options
+    proofSelect.innerHTML = '';
+    verifySelect.innerHTML = '';
+
+    if (currentDataList.length === 0) {
+        proofSelect.innerHTML = '<option value="" disabled selected>-- Vui lòng xây dựng tree trước --</option>';
+        verifySelect.innerHTML = '<option value="" disabled selected>-- Vui lòng sinh proof trước --</option>';
+        return;
+    }
+
+    // Populate proof select
+    proofSelect.innerHTML = '<option value="" disabled selected>-- Chọn phần tử --</option>';
+    currentDataList.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.index;
+        option.textContent = `[${item.index}] ${item.data}`;
+        proofSelect.appendChild(option);
+    });
+
+    // Populate verify select
+    verifySelect.innerHTML = '<option value="" disabled selected>-- Chọn phần tử để kiểm tra --</option>';
+    currentDataList.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.data;
+        option.textContent = `[${item.index}] ${item.data}`;
+        verifySelect.appendChild(option);
+    });
+}
+
+function toggleTextStructure() {
+    const structureEl = document.getElementById('treeStructure');
+    if (structureEl.style.display === 'none')
+        structureEl.style.display = 'block';
+    else
+        structureEl.style.display = 'none';
 }
 
 async function generateProof() {
@@ -49,9 +171,15 @@ async function generateProof() {
         return;
     }
 
-    const indexInput = document.getElementById('proofIndex').value;
-    const index = parseInt(indexInput);
+    const proofSelect = document.getElementById('proofSelect');
+    const selectedIndex = proofSelect.value;
 
+    if (selectedIndex === '' || selectedIndex === null) {
+        showStatus('proofStatus', 'Vui lòng chọn phần tử cần chứng minh!', 'error');
+        return;
+    }
+
+    const index = parseInt(selectedIndex);
     if (isNaN(index) || index < 0 || index >= currentTree.leaf_count) {
         showStatus('proofStatus', `Chỉ số không hợp lệ! (0 - ${currentTree.leaf_count - 1})`, 'error');
         return;
@@ -67,7 +195,6 @@ async function generateProof() {
         });
 
         const result = await response.json();
-
         if (!result.success) {
             showStatus('proofStatus', `❌ Lỗi: ${result.error}`, 'error');
             return;
@@ -75,7 +202,10 @@ async function generateProof() {
 
         currentProof = result.proof;
         currentProofIndex = result.index;
-        document.getElementById('verifyData').value = result.leaf_data;
+
+        // Auto-select the corresponding item in verify dropdown
+        const verifySelect = document.getElementById('verifySelect');
+        verifySelect.value = result.leaf_data;
 
         let proofHTML = `
             <div class="info-section">
@@ -98,7 +228,8 @@ async function generateProof() {
         document.getElementById('proofOutput').style.display = 'block';
 
         showStatus('proofStatus', `✅ Sinh proof thành công! ${result.proof_steps} bước`, 'success');
-    } catch (error) {
+    }
+    catch (error) {
         showStatus('proofStatus', `❌ Lỗi: ${error.message}`, 'error');
     }
 }
@@ -109,15 +240,16 @@ async function verifyProof() {
         return;
     }
 
-    const verifyData = document.getElementById('verifyData').value.trim();
+    const verifySelect = document.getElementById('verifySelect');
+    const verifyData = verifySelect.value;
+
     if (!verifyData) {
-        showStatus('verifyStatus', 'Vui lòng nhập phần tử cần kiểm tra!', 'error');
+        showStatus('verifyStatus', 'Vui lòng chọn phần tử cần kiểm tra!', 'error');
         return;
     }
 
     try {
         showStatus('verifyStatus', '⏳ Đang kiểm tra...', 'info');
-
         const response = await fetch('/api/verify-proof', {
             method: 'POST',
             headers: {
@@ -149,7 +281,8 @@ async function verifyProof() {
                 </div>
             `;
             showStatus('verifyStatus', '✅ Proof hợp lệ!', 'success');
-        } else {
+        }
+        else {
             resultHTML += `
                 <div class="status error show">
                     ❌ <strong>KHÔNG HỢP LỆ!</strong> Dữ liệu không match. Root hash khác!
@@ -160,7 +293,8 @@ async function verifyProof() {
 
         document.getElementById('verifyComparison').innerHTML = resultHTML;
         document.getElementById('verifyResult').style.display = 'block';
-    } catch (error) {
+    }
+    catch (error) {
         showStatus('verifyStatus', `❌ Lỗi: ${error.message}`, 'error');
     }
 }
@@ -173,8 +307,14 @@ async function demoDetectModification() {
 
     try {
         showStatus('verifyStatus', '⏳ Đang demo phát hiện thay đổi...', 'info');
+        const verifySelect = document.getElementById('verifySelect');
+        const originalData = verifySelect.value;
 
-        const originalData = document.getElementById('verifyData').value.trim();
+        if (!originalData) {
+            showStatus('verifyStatus', 'Vui lòng chọn phần tử để demo!', 'error');
+            return;
+        }
+
         const modifiedData = originalData + ' [MODIFIED]';
 
         const response = await fetch('/api/demo-detect', {
@@ -210,7 +350,8 @@ async function demoDetectModification() {
                 </div>
             `;
             showStatus('verifyStatus', '✅ Phát hiện thành công!', 'success');
-        } else {
+        }
+        else {
             resultHTML += `
                 <div class="status success show">
                     ⚠️ Demo không như mong đợi
@@ -220,7 +361,8 @@ async function demoDetectModification() {
 
         document.getElementById('verifyComparison').innerHTML = resultHTML;
         document.getElementById('verifyResult').style.display = 'block';
-    } catch (error) {
+    }
+    catch (error) {
         showStatus('verifyStatus', `❌ Lỗi: ${error.message}`, 'error');
     }
 }
@@ -232,13 +374,21 @@ function showStatus(elementId, message, type) {
 
 function clearAll() {
     document.getElementById('dataInput').value = '';
-    document.getElementById('proofIndex').value = '';
-    document.getElementById('verifyData').value = '';
     clearProof();
     document.getElementById('buildStatus').innerHTML = '';
     document.getElementById('rootHashDisplay').textContent = 'Chưa xây dựng tree';
     document.getElementById('treeStructure').textContent = 'Chưa xây dựng tree';
+    document.getElementById('treeVisual').innerHTML = '<div class="tree-placeholder">Chưa xây dựng tree</div>';
+
     currentTree = null;
+    currentDataList = [];
+
+    // Reset dropdowns
+    document.getElementById('proofSelect').innerHTML = '<option value="" disabled selected>-- Vui lòng xây dựng tree trước --</option>';
+    document.getElementById('verifySelect').innerHTML = '<option value="" disabled selected>-- Vui lòng sinh proof trước --</option>';
+
+    // Reset line counter
+    updateLineCounter();
 }
 
 function clearProof() {
@@ -248,6 +398,18 @@ function clearProof() {
     document.getElementById('proofStatus').innerHTML = '';
     document.getElementById('verifyStatus').innerHTML = '';
     document.getElementById('verifyResult').style.display = 'none';
+
+    // Reset proof select to default
+    const proofSelect = document.getElementById('proofSelect');
+    if (proofSelect.options.length > 0) {
+        proofSelect.selectedIndex = 0;
+    }
+
+    // Reset verify select
+    const verifySelect = document.getElementById('verifySelect');
+    if (currentDataList.length > 0) {
+        verifySelect.selectedIndex = 0;
+    }
 }
 
 function copyToClipboard(elementId) {
@@ -282,4 +444,10 @@ function loadExample(exampleNum) {
     };
 
     document.getElementById('dataInput').value = examples[exampleNum] || '';
+    updateLineCounter();
 }
+
+// Initialize line counter on page load
+document.addEventListener('DOMContentLoaded', function () {
+    updateLineCounter();
+});

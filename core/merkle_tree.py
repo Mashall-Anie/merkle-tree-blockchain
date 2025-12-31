@@ -33,14 +33,14 @@ class MerkleTree:
             raise ValueError("Data không được rỗng!")
 
         self.data = data
-        self.leaves = []
-        self.tree = []
+        self.leaves: List[MerkleNode] = []
+        self.tree: List[List[MerkleNode]] = []
         self.root = None
         self._build_tree()
 
     def _build_tree(self):
-        self.leaves = []
-        for item in self.data:
+        self.leaves: List[MerkleNode] = []
+        for item in self.data:  
             hash_value = sha256_hash(item)
             leaf = MerkleNode(hash_value)
             self.leaves.append(leaf)
@@ -150,3 +150,32 @@ class MerkleTree:
             'time_complexity_verify': 'O(log n)',
             'space_complexity': 'O(n)'
         }
+
+    def get_tree_levels_data(self) -> List[List[Dict[str, Any]]]:
+        """Return tree structure data for visual rendering."""
+        levels_data = []
+        
+        for level_idx in range(len(self.tree) - 1, -1, -1):
+            level_nodes = []
+            for node_idx, node in enumerate(self.tree[level_idx]):
+                node_data = {
+                    'hash': node.hash,
+                    'hash_short': node.get_hash_short(12),
+                    'is_leaf': node.is_leaf,
+                    'is_root': level_idx == len(self.tree) - 1,
+                    'index': node_idx
+                }
+                
+                # Add original data label for leaf nodes
+                if level_idx == 0 and node_idx < len(self.data):
+                    node_data['label'] = self.data[node_idx]
+                
+                level_nodes.append(node_data)
+            
+            levels_data.append({
+                'level': level_idx,
+                'level_name': 'ROOT' if level_idx == len(self.tree) - 1 else f'Level {level_idx}',
+                'nodes': level_nodes
+            })
+        
+        return levels_data

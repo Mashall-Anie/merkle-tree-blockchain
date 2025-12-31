@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Merkle Tree - Bài Tập Lớn Blockchain</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -16,10 +18,14 @@
         <div class="grid">
             <div class="card">
                 <h2>1️⃣ Xây Dựng Merkle Tree</h2>
-                
+
                 <div class="form-group">
                     <label>Nhập dữ liệu (mỗi dòng 1 phần tử):</label>
-                    <textarea id="dataInput" rows="6" placeholder="Block 1&#10;Block 2&#10;Block 3&#10;Block 4"></textarea>
+                    <textarea id="dataInput" rows="6" placeholder="Block 1&#10;Block 2&#10;Block 3&#10;Block 4"
+                        oninput="updateLineCounter()"></textarea>
+                    <div class="line-counter" id="lineCounter">
+                        <span id="lineCount">0</span> / 200 dòng
+                    </div>
                 </div>
 
                 <div class="example-data">
@@ -29,7 +35,7 @@
                 </div>
 
                 <div class="button-group">
-                    <button class="btn-primary" onclick="buildTree()">🔨 Xây Dựng Tree</button>
+                    <button class="btn-primary" onclick="buildTree()" id="buildBtn">🔨 Xây Dựng Tree</button>
                     <button class="btn-secondary" onclick="clearAll()">🗑️ Xóa</button>
                 </div>
 
@@ -38,7 +44,7 @@
 
             <div class="card">
                 <h2>✅ Root Hash (Tóm Tắt Dữ Liệu)</h2>
-                
+
                 <p style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: 10px;">
                     Root hash là đại diện duy nhất cho toàn bộ dữ liệu. Nếu 1 phần tử thay đổi → root hash sẽ khác.
                 </p>
@@ -47,7 +53,8 @@
                     Chưa xây dựng tree
                 </div>
 
-                <button class="btn-primary" onclick="copyToClipboard('rootHashDisplay')" style="width: 100%; margin-top: 10px;">
+                <button class="btn-primary" onclick="copyToClipboard('rootHashDisplay')"
+                    style="width: 100%; margin-top: 10px;">
                     📋 Copy Root Hash
                 </button>
             </div>
@@ -55,12 +62,24 @@
 
         <div class="card">
             <h2>🌳 Cấu Trúc Merkle Tree</h2>
-            
+
             <p style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: 10px;">
                 Cây được xây dựng từ dưới lên (leaf → root). Mỗi node là SHA-256 hash của 2 node con.
             </p>
 
-            <div class="tree-structure" id="treeStructure">
+            <div class="tree-visual-container" id="treeVisualContainer">
+                <div class="tree-visual" id="treeVisual">
+                    <div class="tree-placeholder">Chưa xây dựng tree</div>
+                </div>
+            </div>
+
+            <div class="tree-structure-toggle">
+                <button class="btn-secondary" onclick="toggleTextStructure()" style="width: 100%; margin-top: 10px;">
+                    📄 Hiển thị/Ẩn Cấu Trúc Text
+                </button>
+            </div>
+
+            <div class="tree-structure" id="treeStructure" style="display: none; margin-top: 10px;">
                 Chưa xây dựng tree
             </div>
 
@@ -77,8 +96,10 @@
             </p>
 
             <div class="form-group">
-                <label>Chỉ số phần tử cần chứng minh (0 đến n-1):</label>
-                <input type="number" id="proofIndex" min="0" placeholder="0">
+                <label>Chọn phần tử cần chứng minh:</label>
+                <select id="proofSelect" class="data-select">
+                    <option value="" disabled selected>-- Vui lòng xây dựng tree trước --</option>
+                </select>
             </div>
 
             <div class="button-group">
@@ -104,8 +125,10 @@
             </p>
 
             <div class="form-group">
-                <label>Phần tử cần kiểm tra:</label>
-                <input type="text" id="verifyData" placeholder="Block 1">
+                <label>Chọn phần tử cần kiểm tra:</label>
+                <select id="verifySelect" class="data-select">
+                    <option value="" disabled selected>-- Vui lòng sinh proof trước --</option>
+                </select>
             </div>
 
             <div class="button-group">
@@ -115,7 +138,8 @@
 
             <div id="verifyStatus"></div>
 
-            <div id="verifyResult" style="display: none; margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
+            <div id="verifyResult"
+                style="display: none; margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
                 <h3 style="font-size: 14px; margin-bottom: 10px;">🔍 Kết Quả Kiểm Tra:</h3>
                 <div id="verifyComparison"></div>
             </div>
@@ -124,4 +148,5 @@
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
+
 </html>

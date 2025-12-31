@@ -7,6 +7,9 @@
     --color-text: #212121;
     --color-text-secondary: #757575;
     --color-border: #e0e0e0;
+    --color-node-root: #ffd54f;
+    --color-node-internal: #64b5f6;
+    --color-node-leaf: #81c784;
 }
 
 * {
@@ -34,7 +37,7 @@ header {
     padding: 30px 20px;
     margin-bottom: 30px;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
@@ -64,7 +67,7 @@ h1 {
     background: var(--color-surface);
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border: 1px solid var(--color-border);
     margin-bottom: 20px;
 }
@@ -88,19 +91,64 @@ label {
     font-size: 14px;
 }
 
-textarea, input {
+textarea,
+input,
+select {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--color-border);
     border-radius: 4px;
     font-family: 'Courier New', monospace;
     font-size: 13px;
+    background-color: var(--color-surface);
 }
 
-textarea:focus, input:focus {
+textarea:focus,
+input:focus,
+select:focus {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+/* Dropdown styling */
+.data-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23757575' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.data-select:hover {
+    border-color: var(--color-primary);
+}
+
+.data-select option {
+    padding: 8px;
+    font-family: 'Courier New', monospace;
+}
+
+/* Line counter */
+.line-counter {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    text-align: right;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.line-counter.warning {
+    color: #ff9800;
+    background-color: #fff3e0;
+}
+
+.line-counter.error {
+    color: var(--color-error);
+    background-color: #ffebee;
 }
 
 .button-group {
@@ -127,6 +175,12 @@ button {
 .btn-primary:hover {
     background-color: #1976D2;
     box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.btn-primary:disabled {
+    background-color: #bdbdbd;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 .btn-secondary {
@@ -197,6 +251,149 @@ button {
     border-left: 4px solid var(--color-primary);
 }
 
+/* Visual Tree Container - Scrollable */
+.tree-visual-container {
+    background-color: #fafafa;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 500px;
+    min-height: 200px;
+}
+
+.tree-visual {
+    padding: 56px 12px 20px;
+    min-width: fit-content;
+}
+
+.tree-placeholder {
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: 40px;
+    font-style: italic;
+}
+
+/* Tree Level */
+.tree-level {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.tree-level-label {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    background-color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--color-border);
+}
+
+.tree-nodes {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+/* Tree Node */
+.tree-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.tree-node-box {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    text-align: center;
+    cursor: default;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    min-width: 100px;
+    max-width: 140px;
+    word-break: break-all;
+}
+
+.tree-node-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Node types */
+.tree-node-box.node-root {
+    background-color: var(--color-node-root);
+    border-color: #ffb300;
+    color: #5d4037;
+    font-weight: 600;
+}
+
+.tree-node-box.node-internal {
+    background-color: var(--color-node-internal);
+    border-color: #42a5f5;
+    color: #0d47a1;
+}
+
+.tree-node-box.node-leaf {
+    background-color: var(--color-node-leaf);
+    border-color: #66bb6a;
+    color: #1b5e20;
+}
+
+.tree-node-label {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.tree-node-index {
+    font-size: 9px;
+    color: #9e9e9e;
+    margin-top: 2px;
+}
+
+/* Connector lines */
+.tree-connectors {
+    display: flex;
+    justify-content: center;
+    height: 20px;
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.tree-connector-group {
+    display: flex;
+    position: relative;
+}
+
+.tree-connector-line {
+    width: 2px;
+    height: 20px;
+    background-color: #bdbdbd;
+}
+
+.tree-connector-horizontal {
+    height: 2px;
+    background-color: #bdbdbd;
+    position: absolute;
+    top: 0;
+}
+
+/* Text structure (hidden by default) */
 .tree-structure {
     background-color: #f9f9f9;
     border: 1px solid var(--color-border);
@@ -256,4 +453,41 @@ code {
     border-radius: 3px;
     font-family: 'Courier New', monospace;
     font-size: 12px;
+}
+
+/* Tooltip for full hash on hover */
+.tree-node-box[title] {
+    position: relative;
+}
+
+.tree-node-box:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #424242;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    z-index: 100;
+    margin-bottom: 5px;
+    min-width: 200px;
+    max-width: 300px;
+    word-break: break-all;
+    white-space: normal;
+}
+
+.tree-node-box:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #424242;
+    margin-bottom: -5px;
+    z-index: 100;
 }
