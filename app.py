@@ -1,6 +1,5 @@
-
 from flask import Flask, render_template, request, jsonify
-from core import MerkleTree, sha256_hash
+from core import MerkleTree
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False

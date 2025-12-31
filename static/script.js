@@ -17,7 +17,7 @@ async function buildTree() {
 
     try {
         showStatus('buildStatus', '⏳ Đang xây dựng tree...', 'info');
-        
+
         const response = await fetch('/api/build-tree', {
             method: 'POST',
             headers: {
@@ -130,7 +130,6 @@ async function verifyProof() {
         });
 
         const result = await response.json();
-
         if (!result.success) {
             showStatus('verifyStatus', `❌ Lỗi: ${result.error}`, 'error');
             return;
