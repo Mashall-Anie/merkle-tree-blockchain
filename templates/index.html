@@ -35,11 +35,17 @@
                 </div>
 
                 <div class="button-group">
-                    <button class="btn-primary" onclick="buildTree()" id="buildBtn">🔨 Xây Dựng Tree</button>
-                    <button class="btn-secondary" onclick="clearAll()">🗑️ Xóa</button>
+                    <button class="btn-primary" onclick="buildTree()" id="buildBtn"
+                        style="padding: 8px 15px 8px 12px; font-size: 13px;">
+                        🔨 Xây Dựng Tree
+                    </button>
+                    <button class="btn-secondary" onclick="clearAll()"
+                        style="padding: 8px 15px 8px 12px; font-size: 13px;">
+                        🗑️ Xóa
+                    </button>
+                    <div id="buildStatus"></div>
                 </div>
 
-                <div id="buildStatus"></div>
             </div>
 
             <div class="card">
@@ -105,9 +111,9 @@
             <div class="button-group">
                 <button class="btn-primary" onclick="generateProof()">🔑 Sinh Proof</button>
                 <button class="btn-secondary" onclick="clearProof()">🗑️ Xóa Proof</button>
+                <div id="proofStatus"></div>
             </div>
 
-            <div id="proofStatus"></div>
 
             <div id="proofOutput" style="display: none;">
                 <div style="margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
@@ -122,11 +128,6 @@
                     <div class="tree-visual-container" id="proofTreeContainer" style="max-height: 350px;">
                         <div class="tree-visual" id="proofTreeVisual"></div>
                     </div>
-                </div>
-
-                <div style="margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
-                    <h3 style="font-size: 14px; margin-bottom: 10px;">📜 Merkle Proof Path:</h3>
-                    <div id="proofPath"></div>
                 </div>
             </div>
         </div>
@@ -158,15 +159,19 @@
 
             <div class="button-group">
                 <button class="btn-success" onclick="verifyProof()">✅ Kiểm Tra Proof</button>
-                <button class="btn-danger" onclick="demoDetectModification()">❌ Thay Đổi & Kiểm Tra (Demo)</button>
             </div>
 
             <div id="verifyStatus"></div>
 
             <div id="verifyResult"
                 style="display: none; margin-top: 15px; border-top: 1px solid var(--color-border); padding-top: 15px;">
-                <h3 style="font-size: 14px; margin-bottom: 10px;">🔍 Kết Quả Kiểm Tra:</h3>
-                <div id="verifyComparison"></div>
+                <div style="margin-top: 15px;">
+                    <h3 style="font-size: 14px; margin-bottom: 10px;">🧮 Quá Trình Tính Toán:</h3>
+                    <p style="color: var(--color-text-secondary); font-size: 12px; margin-bottom: 10px;">
+                        Tính hash từ dữ liệu nhập vào + proof path, sau đó so sánh với Root Hash thực tế.
+                    </p>
+                    <div class="proof-calculation" id="verifyCalculation"></div>
+                </div>
             </div>
         </div>
     </div>

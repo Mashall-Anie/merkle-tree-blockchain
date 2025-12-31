@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from core import MerkleTree
+from core.hash_utils import sha256_hash, combine_hashes
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
@@ -84,11 +85,15 @@ def generate_proof():
         
         proof = current_tree.generate_proof(index)
         leaf_data = current_tree.data[index]
+        leaf_hash = current_tree.leaves[index].hash
         
         return jsonify({
             'success': True,
             'index': index,
             'leaf_data': leaf_data,
+            'leaf_hash': leaf_hash,
+            'leaf_hash_short': leaf_hash[:16] + '...',
+            'root_hash': current_tree.get_root_hash(),
             'proof': proof,
             'proof_steps': len(proof)
         }), 200
@@ -126,15 +131,63 @@ def verify_proof():
                 'success': False,
                 'error': 'Proof không được rỗng!'
             }), 400
+
+        computation_steps = []
+        computed_hash = sha256_hash(leaf_data)
         
-        is_valid = current_tree.verify_proof(leaf_data, proof)
+        # Step 0: Initial leaf hash
+        computation_steps.append({
+            'step': 0,
+            'type': 'leaf',
+            'input': leaf_data,
+            'result': computed_hash,
+            'result_short': computed_hash[:16] + '...'
+        })
+        
+        # Steps 1-N: Combine with siblings
+        for i, step in enumerate(proof):
+            sibling_hash = step['hash']
+            position = step['position']
+            
+            if position == 'right':
+                new_hash = combine_hashes(computed_hash, sibling_hash)
+                left_hash = computed_hash
+                right_hash = sibling_hash
+                position = 'left'
+            else:
+                new_hash = combine_hashes(sibling_hash, computed_hash)
+                left_hash = sibling_hash
+                right_hash = computed_hash
+                position = 'right'
+            
+            computation_steps.append({
+                'step': i + 1,
+                'type': 'combine',
+                'level': step['level'],
+                'position': position,
+                'current_hash': computed_hash[:16] + '...',
+                'sibling_hash': sibling_hash[:16] + '...',
+                'sibling_hash_full': sibling_hash,
+                'left_hash': left_hash[:16] + '...',
+                'right_hash': right_hash[:16] + '...',
+                'result': new_hash,
+                'result_short': new_hash[:16] + '...'
+            })
+            
+            computed_hash = new_hash
+        
+        is_valid = computed_hash == current_tree.get_root_hash()
         
         return jsonify({
             'success': True,
             'is_valid': is_valid,
             'leaf_data': leaf_data,
+            'computed_hash': computed_hash,
+            'computed_hash_short': computed_hash[:32] + '...',
             'root_hash': current_tree.get_root_hash(),
-            'message': '✅ Proof hợp lệ!' if is_valid else '❌ Proof không hợp lệ!'
+            'root_hash_short': current_tree.get_root_hash()[:32] + '...',
+            'computation_steps': computation_steps,
+            'message': 'Proof hợp lệ!' if is_valid else 'Proof không hợp lệ!'
         }), 200
     
     except Exception as e:
@@ -142,43 +195,6 @@ def verify_proof():
             'success': False,
             'error': str(e)
         }), 500
-
-
-@app.route('/api/demo-detect', methods=['POST'])
-def demo_detect():
-    global current_tree
-    
-    try:
-        if current_tree is None:
-            return jsonify({
-                'success': False,
-                'error': 'Vui lòng xây dựng tree trước!'
-            }), 400
-        
-        req_data = request.get_json()
-        original_data = req_data.get('original_data', '').strip()
-        modified_data = req_data.get('modified_data', '').strip()
-        proof = req_data.get('proof', [])
-        
-        is_original_valid = current_tree.verify_proof(original_data, proof)
-        is_modified_valid = current_tree.verify_proof(modified_data, proof)
-        
-        return jsonify({
-            'success': True,
-            'original_data': original_data,
-            'modified_data': modified_data,
-            'original_valid': is_original_valid,
-            'modified_valid': is_modified_valid,
-            'detection_success': is_original_valid and not is_modified_valid,
-            'message': '✅ Phát hiện thay đổi thành công!' if (is_original_valid and not is_modified_valid) else '⚠️ Demo không như mong đợi'
-        }), 200
-    
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

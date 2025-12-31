@@ -280,7 +280,6 @@ async function generateProof() {
     }
 
     const index = parseInt(selectedIndex);
-
     if (isNaN(index) || index < 0 || index >= currentTree.leaf_count) {
         showStatus('proofStatus', `Chỉ số không hợp lệ! (0 - ${currentTree.leaf_count - 1})`, 'error');
         return;
@@ -298,7 +297,7 @@ async function generateProof() {
         const result = await response.json();
 
         if (!result.success) {
-            showStatus('proofStatus', `❌ Lỗi: ${result.error}`, 'error');
+            showStatus('proofStatus', `Lỗi: ${result.error}`, 'error');
             return;
         }
 
@@ -312,30 +311,11 @@ async function generateProof() {
 
         // Render proof tree visualization
         renderProofTree(currentTreeLevels, index, result.proof);
-
-        let proofHTML = `
-            <div class="info-section">
-                <strong>🎯 Phần tử cần chứng minh:</strong> <code>${result.leaf_data}</code><br>
-                <strong>📍 Chỉ số:</strong> ${result.index}<br>
-                <strong>📜 Proof Path (${result.proof_steps} bước):</strong>
-            </div>
-        `;
-
-        result.proof.forEach((step, i) => {
-            proofHTML += `
-                <div class="proof-item">
-                    Bước ${i + 1}: Hash từ ${step.position === 'right' ? 'phải' : 'trái'} (Level ${step.level})<br>
-                    ${step.hash_short}
-                </div>
-            `;
-        });
-
-        document.getElementById('proofPath').innerHTML = proofHTML;
         document.getElementById('proofOutput').style.display = 'block';
 
-        showStatus('proofStatus', `✅ Sinh proof thành công! ${result.proof_steps} bước`, 'success');
+        showStatus('proofStatus', `Sinh proof thành công! ${result.proof_steps} bước`, 'success');
     } catch (error) {
-        showStatus('proofStatus', `❌ Lỗi: ${error.message}`, 'error');
+        showStatus('proofStatus', `Lỗi: ${error.message}`, 'error');
     }
 }
 
@@ -470,8 +450,6 @@ async function verifyProof() {
     }
 
     try {
-        showStatus('verifyStatus', '⏳ Đang kiểm tra...', 'info');
-
         const response = await fetch('/api/verify-proof', {
             method: 'POST',
             headers: {
@@ -489,102 +467,110 @@ async function verifyProof() {
             return;
         }
 
-        let resultHTML = `
-            <div class="info-section">
-                <strong>📝 Dữ liệu kiểm tra:</strong> <code>${result.leaf_data}</code><br>
-                <strong>🔑 Root Hash:</strong> <code>${result.root_hash.substring(0, 32)}...</code>
-            </div>
-        `;
-
-        if (result.is_valid) {
-            resultHTML += `
-                <div class="status success show">
-                    <strong>HỢP LỆ!</strong> Dữ liệu match với proof. Root hash khớp!
-                </div>
-            `;
-            showStatus('verifyStatus', 'Proof hợp lệ!', 'success');
-        } else {
-            resultHTML += `
-                <div class="status error show">
-                    <strong>KHÔNG HỢP LỆ!</strong> Dữ liệu không match. Root hash khác!
-                </div>
-            `;
-            showStatus('verifyStatus', 'Proof không hợp lệ!', 'error');
-        }
-
-        document.getElementById('verifyComparison').innerHTML = resultHTML;
-        document.getElementById('verifyResult').style.display = 'block';
-    } catch (error) {
-        showStatus('verifyStatus', `Lỗi: ${error.message}`, 'error');
-    }
-}
-
-async function demoDetectModification() {
-    if (!currentTree || !currentProof) {
-        showStatus('verifyStatus', 'Vui lòng sinh proof trước!', 'error');
-        return;
-    }
-
-    try {
-        showStatus('verifyStatus', 'Đang demo phát hiện thay đổi...', 'info');
-
-        const originalData = getVerifyData();
-
-        if (!originalData) {
-            showStatus('verifyStatus', 'Vui lòng chọn hoặc nhập dữ liệu để demo!', 'error');
-            return;
-        }
-
-        const modifiedData = originalData + ' [MODIFIED]';
-
-        const response = await fetch('/api/demo-detect', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                original_data: originalData,
-                modified_data: modifiedData,
-                proof: currentProof
-            })
-        });
-
-        const result = await response.json();
-
-        if (!result.success) {
-            showStatus('verifyStatus', `Lỗi: ${result.error}`, 'error');
-            return;
-        }
-
-        let resultHTML = `
-            <div class="info-section">
-                <strong>Dữ liệu gốc:</strong> <code>${result.original_data}</code><br>
-                <strong>Dữ liệu sau thay đổi:</strong> <code>${result.modified_data}</code>
-            </div>
-        `;
-
-        if (result.detection_success) {
-            resultHTML += `
-                <div class="status error show">
-                    ✅ <strong>PHÁT HIỆN THAY ĐỔI!</strong> Blockchain bảo mật - dữ liệu bị sửa bị lộ ngay!
-                </div>
-            `;
-            showStatus('verifyStatus', 'Phát hiện thành công!', 'success');
-        }
-        else {
-            resultHTML += `
-                <div class="status success show">
-                    Demo không như mong đợi
-                </div>
-            `;
-        }
-
-        document.getElementById('verifyComparison').innerHTML = resultHTML;
+        // Render verification calculation visualization
+        renderVerifyCalculation(result);
         document.getElementById('verifyResult').style.display = 'block';
     }
     catch (error) {
         showStatus('verifyStatus', `Lỗi: ${error.message}`, 'error');
     }
+}
+
+/**
+ * Render step-by-step verification calculation visualization
+ * @param {Object} verifyResult - Result from verify-proof API
+ */
+function renderVerifyCalculation(verifyResult) {
+    const container = document.getElementById('verifyCalculation');
+
+    if (!verifyResult || !verifyResult.computation_steps) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+    const steps = verifyResult.computation_steps;
+
+    steps.forEach(step => {
+        if (step.type === 'leaf')
+            html += `
+                <div class="calc-step">
+                    <span class="calc-step-number step-start">${step.step}</span>
+                    <span class="calc-label">Leaf Hash:</span>
+                    <span class="calc-function">SHA256("${step.input}")</span>
+                </div>
+                <div class="calc-step" style="padding-left: 36px;">
+                    <span class="calc-arrow">→</span>
+                    <span class="calc-hash-box hash-current">${step.result_short}</span>
+                </div>
+            `;
+        else
+            if (step.position === 'right')
+                html += `
+                    <div class="calc-step">
+                        <span class="calc-step-number">${step.step}</span>
+                        <span class="calc-label">Level ${step.level}:</span>
+                        <span class="calc-hash-box hash-sibling">${step.left_hash}</span>
+                        <span class="calc-operator">+</span>
+                        <span class="calc-hash-box hash-current">${step.right_hash}</span>
+                        <span class="calc-position">sibling: trái</span>
+                    </div>
+                    <div class="calc-step" style="padding-left: 36px;">
+                        <span class="calc-function">SHA256(left + right)</span>
+                        <span class="calc-arrow">→</span>
+                        <span class="calc-hash-box hash-result">${step.result_short}</span>
+                    </div>
+                `;
+            else
+                html += `
+                    <div class="calc-step">
+                        <span class="calc-step-number">${step.step}</span>
+                        <span class="calc-label">Level ${step.level}:</span>
+                        <span class="calc-hash-box hash-current">${step.left_hash}</span>
+                        <span class="calc-operator">+</span>
+                        <span class="calc-hash-box hash-sibling">${step.right_hash}</span>
+                        <span class="calc-position">sibling: phải</span>
+                    </div>
+                    <div class="calc-step" style="padding-left: 36px;">
+                        <span class="calc-function">SHA256(left + right)</span>
+                        <span class="calc-arrow">→</span>
+                        <span class="calc-hash-box hash-result">${step.result_short}</span>
+                    </div>
+                `;
+    });
+
+    // Final comparison
+    html += `<div class="calc-divider"></div>`;
+
+    if (verifyResult.is_valid) {
+        html += `
+            <div class="calc-final-result result-match">
+                <span class="calc-result-icon">✅</span>
+                <div>
+                    <div class="calc-result-text">Kết quả tính toán KHỚP với Root Hash!</div>
+                    <div style="font-size: 11px; margin-top: 8px;">
+                        <div><strong>Computed:</strong> <code>${verifyResult.computed_hash_short}</code></div>
+                        <div><strong>Root Hash:</strong> <code>${verifyResult.root_hash_short}</code></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="calc-final-result result-mismatch">
+                <span class="calc-result-icon">❌</span>
+                <div>
+                    <div class="calc-result-text">Kết quả tính toán KHÔNG KHỚP với Root Hash!</div>
+                    <div style="font-size: 11px; margin-top: 8px;">
+                        <div><strong>Computed:</strong> <code style="color: #c62828;">${verifyResult.computed_hash_short}</code></div>
+                        <div><strong>Root Hash:</strong> <code style="color: #2e7d32;">${verifyResult.root_hash_short}</code></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
 }
 
 /**
