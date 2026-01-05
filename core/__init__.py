@@ -1,8 +1,3 @@
-"""
-Merkle Tree Core Package
-Code thuần Python - không dùng thư viện bên ngoài
-"""
-
 from .merkle_tree import MerkleTree
 from .hash_utils import sha256_hash
 
